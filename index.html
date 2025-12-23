@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>NFC Redirect</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+</head>
+<body>
+  <h2>🔄 Đang kiểm tra NFC…</h2>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    if (!id) {
+      document.body.innerHTML = "<h2>❌ Thiếu ID NFC</h2>";
+    } else {
+      fetch("data.csv?nocache=" + Date.now())
+        .then(res => {
+          if (!res.ok) throw new Error("Không tìm thấy data.csv");
+          return res.text();
+        })
+        .then(csvText => {
+          const rows = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true
+          }).data;
+
+          const row = rows.find(r =>
+            r.ID &&
+            r.ID.trim().toUpperCase() === id.trim().toUpperCase()
+          );
+
+          if (row && row.LINKS) {
+            window.location.href = row.LINKS;
+          } else {
+            document.body.innerHTML =
+              `<h2>❌ ID "${id}" không tồn tại</h2>`;
+          }
+        })
+        .catch(err => {
+          document.body.innerHTML = `<h2>⚠️ Lỗi: ${err.message}</h2>`;
+        });
+    }
+  </script>
+</body>
+</html>
