@@ -1,3 +1,16 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>NFC Redirect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+</head>
+<body>
+  <h3>📲 Đã quét NFC, đang chuyển hướng…</h3>
+
 <script>
 const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbxemlxIMJtagonvW6J5Sw9aR1OSunif_150wmJaw6efKiU-4k7huIbfCS-Bkmcq9WmY/exec";
 
@@ -7,10 +20,17 @@ const id = params.get("id");
 if (!id) {
   document.body.innerHTML = "<h3>❌ Không có ID NFC</h3>";
 } else {
+
   fetch("data.csv")
-    .then(res => res.text())
+    .then(res => {
+      if (!res.ok) throw new Error("Không tìm thấy data.csv");
+      return res.text();
+    })
     .then(csvText => {
-      const rows = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
+      const rows = Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true
+      }).data;
 
       const row = rows.find(r =>
         r.ID && r.ID.trim().toUpperCase() === id.trim().toUpperCase()
@@ -21,7 +41,7 @@ if (!id) {
         return;
       }
 
-      // GỬI LOG
+      // ===== GỬI LOG =====
       fetch(SHEET_LOG_URL, {
         method: "POST",
         mode: "no-cors",
@@ -37,11 +57,16 @@ if (!id) {
         })
       });
 
-      // REDIRECT
-      window.location.replace(row.LINKS);
+      // ===== REDIRECT =====
+      setTimeout(() => {
+        window.location.replace(row.LINKS);
+      }, 300); // delay nhẹ cho iPhone
     })
     .catch(err => {
       document.body.innerHTML = `<h3>⚠️ Lỗi: ${err.message}</h3>`;
     });
 }
 </script>
+
+</body>
+</html>
