@@ -2,113 +2,62 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>NFC Smart Redirect 2025</title>
+  <title>NFC Smart System - Notegroup</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Thư viện xử lý CSV -->
   <script src="cdn.jsdelivr.net"></script>
-  
   <style>
-    :root { --primary: #007aff; --error: #ff3b30; --bg: #f2f2f7; }
-    body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-    .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 90%; max-width: 400px; }
-    .status { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--primary); }
-    .error { color: var(--error); }
-    #manualInput { display: none; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1.5rem; }
-    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
-    button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
+    body { font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f5f7; text-align: center; }
+    .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 85%; max-width: 350px; }
+    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #007aff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .status { color: #007aff; font-weight: 600; }
   </style>
 </head>
 <body>
-
   <div class="card">
     <div id="loader" class="loader"></div>
-    <div id="status" class="status">Đang xử lý NFC...</div>
-    
-    <div id="manualInput">
-      <p style="color: #666; font-size: 0.9rem;">Không nhận diện được mã tự động. Vui lòng nhập ID thẻ:</p>
-      <input type="text" id="inputId" placeholder="Ví dụ: A001">
-      <button id="submitId">Xác nhận</button>
-    </div>
+    <div id="status" class="status">Đang định vị NFC...</div>
   </div>
 
 <script>
-// Cấu hình URL hệ thống của bạn
-const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbxtVJTyeXMQe7ilt5f1zoy-uo5S7R2pZ4GeJNda_M71tOygNIbBR0dp9GErwmo3OA/exec";
+const SHEET_LOG_URL = "script.google.com";
 const CSV_FILE = "data.csv";
 
-const statusEl = document.getElementById("status");
-const loaderEl = document.getElementById("loader");
-const manualInputEl = document.getElementById("manualInput");
-
-function updateUI(msg, isError = false) {
-  statusEl.textContent = msg;
-  statusEl.className = isError ? "status error" : "status";
-  loaderEl.style.display = isError ? "none" : "block";
-  if (isError) manualInputEl.style.display = "block";
-}
-
-function processNFC(targetId) {
-  if (!targetId) return;
-  const cleanId = targetId.trim().toUpperCase();
-  updateUI(`Đang tìm ID: ${cleanId}...`);
-
-  fetch(CSV_FILE)
-    .then(res => {
-      if (!res.ok) throw new Error("Không thấy file data.csv");
-      return res.text();
-    })
-    .then(csvText => {
-      const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-      const row = result.data.find(r => r.ID && r.ID.trim().toUpperCase() === cleanId);
-
-      if (!row || !row.LINKS) {
-        throw new Error(`Mã ID "${cleanId}" không hợp lệ`);
-      }
-
-      // 1. Chuẩn bị dữ liệu Log
-      const logData = new URLSearchParams({
-        id: row.ID,
-        links: row.LINKS,
-        toa_nha: row.TEN_TOA_NHA || "N/A"
-      });
-
-      // 2. Gửi Log về Google Sheets (Sử dụng no-cors để tối ưu tốc độ)
-      fetch(`${SHEET_LOG_URL}?${logData.toString()}`, { mode: 'no-cors' });
-
-      updateUI("Kết nối thành công! Đang chuyển hướng...");
-
-      // 3. Chuyển hướng sau 600ms để đảm bảo log được gửi đi
-      setTimeout(() => {
-        window.location.replace(row.LINKS);
-      }, 600);
-    })
-    .catch(err => {
-      updateUI(err.message, true);
-    });
-}
-
-// Kiểm tra tham số ID từ URL (Vd: index.html?id=A001)
 const params = new URLSearchParams(window.location.search);
-const idFromUrl = params.get("id");
+const id = params.get("id");
 
-if (idFromUrl) {
-  processNFC(idFromUrl);
+if (id) {
+  fetch(CSV_FILE)
+    .then(res => res.text())
+    .then(csvText => {
+      const data = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
+      const row = data.find(r => r.ID && r.ID.trim() === id.trim());
+
+      if (row) {
+        document.getElementById("status").textContent = "Đang chuyển hướng...";
+        
+        // Gửi Log chi tiết
+        const query = new URLSearchParams({
+          id: row.ID,
+          toa_nha: row.TEN_TOA_NHA,
+          quan: row.Quan,
+          tang: row.TANG,
+          vi_tri: row.VI_TRI,
+          links: row.LINKS
+        });
+
+        fetch(`${SHEET_LOG_URL}?${query.toString()}`, { mode: 'no-cors' });
+
+        setTimeout(() => { window.location.replace(row.LINKS); }, 600);
+      } else {
+        document.getElementById("status").innerHTML = `<span style="color:red">Lỗi: Không tìm thấy ID ${id}</span>`;
+        document.getElementById("loader").style.display = "none";
+      }
+    });
 } else {
-  updateUI("Vui lòng quét thẻ hoặc nhập ID", true);
+  document.getElementById("status").textContent = "Vui lòng quét thẻ NFC";
+  document.getElementById("loader").style.display = "none";
 }
-
-// Xử lý khi nhập tay
-document.getElementById("submitId").onclick = () => {
-  const inputVal = document.getElementById("inputId").value;
-  if (inputVal) {
-    manualInputEl.style.display = "none";
-    processNFC(inputVal);
-  }
-};
 </script>
-
 </body>
 </html>
