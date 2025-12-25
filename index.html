@@ -1,60 +1,50 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>NFC Redirect</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-  <style>
-    body { font-family: system-ui, -apple-system, Arial, sans-serif; padding: 16px; }
-    .error { color: #c62828; }
-    .info { color: #1565c0; }
-  </style>
+<meta charset="UTF-8">
+<title>NFC Redirect</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+<style>
+  body { font-family: system-ui, -apple-system, Arial, sans-serif; padding: 16px; }
+  .error { color: #c62828; }
+  .info { color: #1565c0; }
+</style>
 </head>
 <body>
-  <h3 class="info" id="status">📲 Đang xử lý NFC…</h3>
+<h3 class="info" id="status">📲 Đang xử lý NFC…</h3>
 
 <script>
 const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbxemlxIMJtagonvW6J5Sw9aR1OSunif_150wmJaw6efKiU-4k7huIbfCS-Bkmcq9WmY/exec";
 const CSV_FILE = "https://raw.githubusercontent.com/Notegroupnfc/ng_nfc.github.io/main/data.csv";
 const statusEl = document.getElementById("status");
 
-function setStatus(msg, isError=false) {
+function setStatus(msg, isError=false){
   statusEl.textContent = msg;
   statusEl.className = isError ? "error" : "info";
 }
 
-function processId(id) {
+function processId(id){
   setStatus(`📄 Đang tìm ID: ${id}…`);
   fetch(CSV_FILE)
     .then(res => res.text())
     .then(csvText => {
       const rows = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
       const row = rows.find(r => r.ID && r.ID.trim().toUpperCase() === id.trim().toUpperCase());
-      if (!row || !row.LINKS) {
+      if(!row || !row.LINKS){
         setStatus(`❌ ID "${id}" không tồn tại`, true);
         return;
       }
 
-      // Gửi log tới Apps Script
-      fetch(SHEET_LOG_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: row.ID,
-          links: row.LINKS,
-          toa_nha: row.TEN_TOA_NHA || "",
-          ua: navigator.userAgent
-        })
-      });
+      // Gửi log bằng Image Ping (không bị CORS)
+      const img = new Image();
+      img.src = `${SHEET_LOG_URL}?id=${encodeURIComponent(row.ID)}&links=${encodeURIComponent(row.LINKS)}&toa_nha=${encodeURIComponent(row.TEN_TOA_NHA||"")}&ua=${encodeURIComponent(navigator.userAgent)}`;
 
-      // Redirect sang link
+      // Redirect sang LINK
       setStatus("🔁 Chuyển hướng…");
       setTimeout(()=> window.location.replace(row.LINKS), 300);
     })
-    .catch(err => {
-      setStatus(`⚠️ Lỗi: ${err.message}`, true);
-    });
+    .catch(err => setStatus(`⚠️ Lỗi: ${err.message}`, true));
 }
 
 // Lấy ID từ URL
@@ -63,7 +53,7 @@ const id = params.get("id");
 
 if(!id){
   setStatus("❌ Không có ID NFC, vui lòng thêm ?id=xxxx vào URL", true);
-} else {
+}else{
   processId(id);
 }
 </script>
