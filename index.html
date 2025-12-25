@@ -2,81 +2,112 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>NFC Redirect</title>
+  <title>NFC Smart Redirect 2025</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- PapaParse -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  
+  <!-- Thư viện xử lý CSV -->
+  <script src="cdn.jsdelivr.net"></script>
+  
   <style>
-    body { font-family: system-ui, -apple-system, Arial, sans-serif; padding: 16px; }
-    .error { color: #c62828; }
-    .info { color: #1565c0; }
-    input, button { padding: 8px; margin-top: 8px; }
+    :root { --primary: #007aff; --error: #ff3b30; --bg: #f2f2f7; }
+    body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+    .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 90%; max-width: 400px; }
+    .status { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--primary); }
+    .error { color: var(--error); }
+    #manualInput { display: none; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1.5rem; }
+    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
+    button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <h3 class="info" id="status">📲 Đang xử lý NFC…</h3>
-  <div id="manualInput" style="display:none;">
-    <label>Nhập ID NFC: </label>
-    <input type="text" id="inputId" placeholder="VD: A001">
-    <button id="submitId">Gửi</button>
+
+  <div class="card">
+    <div id="loader" class="loader"></div>
+    <div id="status" class="status">Đang xử lý NFC...</div>
+    
+    <div id="manualInput">
+      <p style="color: #666; font-size: 0.9rem;">Không nhận diện được mã tự động. Vui lòng nhập ID thẻ:</p>
+      <input type="text" id="inputId" placeholder="Ví dụ: A001">
+      <button id="submitId">Xác nhận</button>
+    </div>
   </div>
 
 <script>
-const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbxemlxIMJtagonvW6J5Sw9aR1OSunif_150wmJaw6efKiU-4k7huIbfCS-Bkmcq9WmY/exec";
+// Cấu hình URL hệ thống của bạn
+const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbxtVJTyeXMQe7ilt5f1zoy-uo5S7R2pZ4GeJNda_M71tOygNIbBR0dp9GErwmo3OA/exec";
 const CSV_FILE = "data.csv";
+
 const statusEl = document.getElementById("status");
+const loaderEl = document.getElementById("loader");
 const manualInputEl = document.getElementById("manualInput");
 
-function setStatus(msg, isError=false) {
+function updateUI(msg, isError = false) {
   statusEl.textContent = msg;
-  statusEl.className = isError ? "error" : "info";
+  statusEl.className = isError ? "status error" : "status";
+  loaderEl.style.display = isError ? "none" : "block";
+  if (isError) manualInputEl.style.display = "block";
 }
 
-function processId(id) {
-  setStatus(`📄 Đang tìm ID: ${id}…`);
+function processNFC(targetId) {
+  if (!targetId) return;
+  const cleanId = targetId.trim().toUpperCase();
+  updateUI(`Đang tìm ID: ${cleanId}...`);
+
   fetch(CSV_FILE)
     .then(res => {
-      if (!res.ok) throw new Error("Không tìm thấy data.csv");
+      if (!res.ok) throw new Error("Không thấy file data.csv");
       return res.text();
     })
     .then(csvText => {
-      const rows = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
-      const row = rows.find(r =>
-        r.ID && r.ID.trim().toUpperCase() === id.trim().toUpperCase()
-      );
+      const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+      const row = result.data.find(r => r.ID && r.ID.trim().toUpperCase() === cleanId);
+
       if (!row || !row.LINKS) {
-        setStatus(`❌ ID "${id}" không tồn tại`, true);
-        return;
+        throw new Error(`Mã ID "${cleanId}" không hợp lệ`);
       }
 
-      // 🔹 Ghi log bằng GET query string
-      const logUrl = `${SHEET_LOG_URL}?id=${encodeURIComponent(row.ID)}&links=${encodeURIComponent(row.LINKS)}&toa_nha=${encodeURIComponent(row.TEN_TOA_NHA || "")}`;
-      fetch(logUrl).catch(err => console.log("Log không ảnh hưởng redirect:", err));
+      // 1. Chuẩn bị dữ liệu Log
+      const logData = new URLSearchParams({
+        id: row.ID,
+        links: row.LINKS,
+        toa_nha: row.TEN_TOA_NHA || "N/A"
+      });
 
-      // Redirect
-      setStatus("🔁 Đang chuyển hướng…");
-      setTimeout(() => window.location.replace(row.LINKS), 300);
+      // 2. Gửi Log về Google Sheets (Sử dụng no-cors để tối ưu tốc độ)
+      fetch(`${SHEET_LOG_URL}?${logData.toString()}`, { mode: 'no-cors' });
+
+      updateUI("Kết nối thành công! Đang chuyển hướng...");
+
+      // 3. Chuyển hướng sau 600ms để đảm bảo log được gửi đi
+      setTimeout(() => {
+        window.location.replace(row.LINKS);
+      }, 600);
     })
     .catch(err => {
-      setStatus(`⚠️ Lỗi: ${err.message}`, true);
+      updateUI(err.message, true);
     });
 }
 
-// Lấy ID từ URL
+// Kiểm tra tham số ID từ URL (Vd: index.html?id=A001)
 const params = new URLSearchParams(window.location.search);
-let id = params.get("id");
+const idFromUrl = params.get("id");
 
-if (!id) {
-  setStatus("❌ Không có ID NFC, vui lòng nhập ID thủ công");
-  manualInputEl.style.display = "block";
-  document.getElementById("submitId").onclick = () => {
-    const inputId = document.getElementById("inputId").value.trim();
-    if (inputId) processId(inputId);
-  };
+if (idFromUrl) {
+  processNFC(idFromUrl);
 } else {
-  processId(id);
+  updateUI("Vui lòng quét thẻ hoặc nhập ID", true);
 }
+
+// Xử lý khi nhập tay
+document.getElementById("submitId").onclick = () => {
+  const inputVal = document.getElementById("inputId").value;
+  if (inputVal) {
+    manualInputEl.style.display = "none";
+    processNFC(inputVal);
+  }
+};
 </script>
 
 </body>
