@@ -50,21 +50,9 @@ function processId(id) {
         return;
       }
 
-      // Gửi log
-      fetch(SHEET_LOG_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: row.ID,
-          toa_nha: row.TEN_TOA_NHA || "",
-          dia_chi: row.DIA_CHI || "",
-          quan: row.Quan || "",
-          tang: row.TANG || "",
-          vi_tri: row.VI_TRI || "",
-          ua: navigator.userAgent
-        })
-      });
+      // 🔹 Ghi log bằng GET query string
+      const logUrl = `${SHEET_LOG_URL}?id=${encodeURIComponent(row.ID)}&links=${encodeURIComponent(row.LINKS)}&toa_nha=${encodeURIComponent(row.TEN_TOA_NHA || "")}`;
+      fetch(logUrl).catch(err => console.log("Log không ảnh hưởng redirect:", err));
 
       // Redirect
       setStatus("🔁 Đang chuyển hướng…");
