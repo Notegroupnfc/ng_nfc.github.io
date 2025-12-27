@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>NFC Smart System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- PapaParse CDN -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
 :root { --primary:#007aff; --bg:#f5f5f7; --error:#ff3b30; }
@@ -34,13 +33,11 @@ button { width:100%; padding:12px; background:var(--primary); color:white; borde
 </div>
 
 <script>
-// ===== CẤU HÌNH =====
-const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbyRmsvjj3XQ6WFVXyCAhtRBMIlHU1OEjBoWVeHYF6jOuAbhaArPaP5ix8wy3WgTt4tj/exec"; // Thay YOUR_DEPLOY_ID
-const CSV_FILE = "data.csv"; // CSV public cùng thư mục
+const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbyCK7breihiKuXSMFlfx8EHRxtCKXvMJ3Qdbww5CwE0HhDaOCaxusdnmMPnoprSRQsF/exec"; // Thay YOUR_DEPLOY_ID
+const CSV_FILE = "data.csv";
 const CACHE_KEY = "csv_cache";
 const CACHE_TIME = 5*60*1000;
 
-// ===== UI =====
 const statusEl = document.getElementById("status");
 const loaderEl = document.getElementById("loader");
 const manualInputEl = document.getElementById("manualInput");
@@ -52,7 +49,6 @@ function setUI(msg,error=false){
   manualInputEl.style.display=error?"block":"none";
 }
 
-// ===== CSV =====
 async function loadCSV(){
   const cached = localStorage.getItem(CACHE_KEY);
   if(cached){
@@ -67,7 +63,6 @@ async function loadCSV(){
   return parsed.data;
 }
 
-// ===== XỬ LÝ ID =====
 async function processID(id,source){
   if(!id) return;
   const target=id.trim().toUpperCase();
@@ -77,7 +72,6 @@ async function processID(id,source){
     const row = data.find(r=>r.ID?.trim().toUpperCase()===target);
     if(!row||!row.LINKS) throw new Error("ID chưa đăng ký");
 
-    // Nếu quét NFC → gửi log
     if(source==="nfc"){
       const params = new URLSearchParams({
         id: row.ID,
@@ -93,7 +87,6 @@ async function processID(id,source){
   }catch(e){ setUI(e.message,true);}
 }
 
-// ===== KHỞI CHẠY =====
 const urlParams = new URLSearchParams(location.search);
 const idParam = urlParams.get("id");
 const sourceParam = urlParams.get("source");
@@ -101,10 +94,9 @@ const sourceParam = urlParams.get("source");
 if(idParam) processID(idParam,sourceParam);
 else setUI("Vui lòng quét thẻ NFC",true);
 
-// Nút nhập thủ công
 document.getElementById("submitId").onclick=()=>{
   const v=document.getElementById("inputId").value;
-  if(v) processID(v,"manual"); // submit thủ công KHÔNG ghi log
+  if(v) processID(v,"manual");
 };
 </script>
 </body>
