@@ -1,81 +1,68 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>NFC Smart System - Notegroup</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Thêm đầy đủ thư viện PapaParse -->
-  <script src="cdn.jsdelivr.net"></script>
-  <style>
-    body { font-family: -apple-system, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f5f7; text-align: center; }
-    .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 85%; max-width: 350px; }
-    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #007aff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .status { color: #007aff; font-weight: 600; font-size: 1.1rem; }
-    .error { color: #ff3b30; }
-  </style>
+    <title>Đồng bộ CSV lên Google Sheets</title>
+    <!-- Sử dụng thư viện PapaParse để đọc CSV dễ dàng -->
+    <script src="cdnjs.cloudflare.com"></script>
 </head>
 <body>
-  <div class="card">
-    <div id="loader" class="loader"></div>
-    <div id="status" class="status">Đang định vị NFC...</div>
-  </div>
+    <h2>Đồng bộ dữ liệu từ data.csv</h2>
+    <input type="file" id="csvFile" accept=".csv">
+    <button onclick="uploadCSV()">Gửi lên Google Sheets</button>
+    <p id="status"></p>
 
-<script>
-// Thay bằng URL App Script thật của bạn
-const SHEET_LOG_URL = "script.google.com"; 
-const CSV_FILE = "data.csv";
+    <script>
+        const WEB_APP_URL = "URL_CỦA_APPS_SCRIPT_SAU_KHI_DEPLOY";
 
-const params = new URLSearchParams(window.location.search);
-const id = params.get("id");
+        function uploadCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const status = document.getElementById('status');
 
-if (id) {
-  fetch(CSV_FILE)
-    .then(res => {
-      if (!res.ok) throw new Error("Không thể tải tệp dữ liệu");
-      return res.text();
-    })
-    .then(csvText => {
-      const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-      const row = results.data.find(r => r.ID && r.ID.trim().toUpperCase() === id.trim().toUpperCase());
+            if (fileInput.files.length === 0) {
+                alert("Vui lòng chọn file data.csv!");
+                return;
+            }
 
-      if (row && row.LINKS) {
-        document.getElementById("status").textContent = "Đang chuyển hướng...";
-        
-        // Ghi Log chi tiết sang Google Sheets
-        const query = new URLSearchParams({
-          id: row.ID,
-          toa_nha: row.TEN_TOA_NHA || "",
-          quan: row.Quan || "",
-          tang: row.TANG || "",
-          vi_tri: row.VI_TRI || "",
-          links: row.LINKS
-        });
+            status.innerText = "Đang xử lý...";
 
-        // Sử dụng beacon hoặc fetch không đồng bộ để không chặn redirect
-        fetch(`${SHEET_LOG_URL}?${query.toString()}`, { mode: 'no-cors' });
+            // Đọc file CSV
+            Papa.parse(fileInput.files[0], {
+                header: true, // Tự động lấy dòng đầu làm key (id, toa_nha,...)
+                complete: async function(results) {
+                    const rows = results.data;
+                    let successCount = 0;
 
-        // Chuyển hướng sau một khoảng chờ ngắn
-        setTimeout(() => { 
-          window.location.replace(row.LINKS); 
-        }, 800);
-      } else {
-        showError(`Không tìm thấy ID: ${id}`);
-      }
-    })
-    .catch(err => {
-      showError("Lỗi hệ thống: " + err.message);
-    });
-} else {
-  showError("Vui lòng quét thẻ NFC");
-}
+                    // Duyệt từng hàng trong CSV và gửi POST
+                    for (const row of rows) {
+                        if (!row.id) continue; // Bỏ qua hàng trống
 
-function showError(msg) {
-  const statusEl = document.getElementById("status");
-  statusEl.innerHTML = msg;
-  statusEl.className = "status error";
-  document.getElementById("loader").style.display = "none";
-}
-</script>
+                        const payload = {
+                            id: row.id,
+                            toa_nha: row.toa_nha || row.TEN_TOA_NHA, // Map theo tên cột trong CSV của bạn
+                            dia_chi: row.dia_chi || row.DIA_CHI,
+                            quan: row.quan || row.Quan,
+                            tang: row.tang || row.TANG,
+                            vi_tri: row.vi_tri || row.VI_TRI,
+                            ua: navigator.userAgent
+                        };
+
+                        try {
+                            const response = await fetch(WEB_APP_URL, {
+                                method: 'POST',
+                                mode: 'no-cors', // Cần thiết khi gọi Web App từ domain khác
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            successCount++;
+                            status.innerText = `Đã gửi thành công ${successCount}/${rows.length} dòng.`;
+                        } catch (error) {
+                            console.error("Lỗi khi gửi dòng:", row.id, error);
+                        }
+                    }
+                    status.innerText = "Hoàn tất đồng bộ!";
+                }
+            });
+        }
+    </script>
 </body>
 </html>
