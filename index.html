@@ -5,16 +5,16 @@
   <title>NFC Smart System - Notegroup</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- SỬ DỤNG FILE CỤC BỘ TỪ GITHUB (Khắc phục lỗi CDN) -->
-  <script src="papaparse.min.js"></script>
+  <!-- Thư viện xử lý dữ liệu CSV -->
+  <script src="cdn.jsdelivr.net"></script>
   
   <style>
-    :root { --primary: #007aff; --error: #ff3b30; --bg: #f5f5f7; }
+    :root { --primary: #007aff; --bg: #f5f5f7; --error: #ff3b30; }
     body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #1d1d1f; }
-    .container { background: white; padding: 2.5rem; border-radius: 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); width: 90%; max-width: 380px; text-align: center; }
-    .status { font-size: 1.1rem; font-weight: 600; margin: 15px 0; color: var(--primary); }
+    .container { background: white; padding: 2.5rem; border-radius: 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 90%; max-width: 380px; text-align: center; }
     .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .status { font-size: 1.1rem; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
     #manualInput { display: none; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
     input { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; margin-bottom: 12px; box-sizing: border-box; font-size: 16px; }
     button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
@@ -28,19 +28,18 @@
     <div id="status" class="status">Đang định vị NFC...</div>
     
     <div id="manualInput">
-      <p class="error-text">Không tìm thấy mã tự động hoặc mã không hợp lệ.</p>
-      <input type="text" id="inputId" placeholder="Nhập mã ID (VD: TTS-BA-G11)">
+      <p class="error-text">Không tìm thấy mã hoặc mã không hợp lệ.</p>
+      <input type="text" id="inputId" placeholder="Nhập mã ID (VD: TTS-BA-G1.1)">
       <button id="submitId">Xác nhận</button>
     </div>
   </div>
 
 <script>
 /**
- * CẤU HÌNH HỆ THỐNG
+ * CẤU HÌNH HỆ THỐNG 2025
  */
-// URL Web App Google Script của bạn
 const SHEET_LOG_URL = "script.google.com";
-const CSV_FILE = "data.csv"; // File này phải nằm cùng thư mục trên GitHub
+const CSV_FILE = "data.csv"; 
 
 const statusEl = document.getElementById("status");
 const loaderEl = document.getElementById("loader");
@@ -55,37 +54,37 @@ function setUIState(msg, isError = false) {
 
 function processRedirect(nfcId) {
   if (!nfcId) return;
-  const targetId = nfcId.trim().toUpperCase();
+  const targetId = nfcId.trim();
   setUIState(`Đang xử lý ID: ${targetId}...`);
 
-  // 1. Tải file CSV từ GitHub
+  // Tải file data.csv từ GitHub
   fetch(CSV_FILE)
     .then(res => {
-      if (!res.ok) throw new Error("Không thể tải danh sách dữ liệu.");
+      if (!res.ok) throw new Error("Không thể tải danh sách dữ liệu CSV.");
       return res.text();
     })
     .then(csvText => {
-      // 2. Phân tích dữ liệu CSV
       const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-      const foundRow = result.data.find(r => r.ID && r.ID.trim().toUpperCase() === targetId);
+      // Tìm dòng dữ liệu khớp với ID (Không phân biệt hoa thường)
+      const foundRow = result.data.find(r => r.ID && r.ID.trim().toUpperCase() === targetId.toUpperCase());
 
       if (!foundRow || !foundRow.LINKS) {
-        throw new Error(`Mã ID "${targetId}" chưa được đăng ký.`);
+        throw new Error(`ID "${targetId}" chưa được đăng ký.`);
       }
 
-      // 3. Gửi Log về Google Sheets (CHỈ GỬI 3 THÔNG TIN QUAN TRỌNG)
+      // Gửi Log về Google Sheets (Theo Header yêu cầu: ID, THOI_GIAN, TEN_TOA_NHA, LINKS)
       const query = new URLSearchParams({
         id: foundRow.ID,
-        toa_nha: foundRow.TEN_TOA_NHA,
+        toa_nha: foundRow.TEN_TOA_NHA || "",
         links: foundRow.LINKS
       });
 
-      // Gửi ngầm (no-cors) để không làm gián đoạn trải nghiệm
+      // Gửi ngầm (no-cors) để tối ưu tốc độ người dùng
       fetch(`${SHEET_LOG_URL}?${query.toString()}`, { mode: 'no-cors' });
 
       setUIState("✅ Thành công! Đang chuyển hướng...");
 
-      // 4. Chuyển hướng người dùng sau 0.5s
+      // Chuyển hướng người dùng sau 0.5 giây
       setTimeout(() => {
         window.location.replace(foundRow.LINKS);
       }, 500);
@@ -95,14 +94,14 @@ function processRedirect(nfcId) {
     });
 }
 
-// Lấy ID từ URL (VD: ?id=A001)
+// Lấy ID từ URL: ?id=XYZ
 const urlParams = new URLSearchParams(window.location.search);
 const idParam = urlParams.get("id");
 
 if (idParam) {
   processRedirect(idParam);
 } else {
-  setUIState("Sẵn sàng quét NFC", true);
+  setUIState("Vui lòng quét thẻ NFC", true);
 }
 
 // Xử lý nút bấm thủ công
