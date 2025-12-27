@@ -2,58 +2,25 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>NFC Smart System - Notegroup</title>
+<title>NFC Smart System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- PapaParse CDN -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <style>
 :root { --primary:#007aff; --bg:#f5f5f7; --error:#ff3b30; }
-body {
-  font-family:-apple-system, system-ui, sans-serif;
-  background:var(--bg);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-  margin:0;
-  color:#1d1d1f;
-}
-.container {
-  background:white;
-  padding:2.5rem;
-  border-radius:24px;
-  box-shadow:0 8px 30px rgba(0,0,0,.1);
-  width:90%;
-  max-width:380px;
-  text-align:center;
-}
-.loader {
-  border:4px solid #f3f3f3;
-  border-top:4px solid var(--primary);
-  border-radius:50%;
-  width:40px;
-  height:40px;
-  animation:spin 1s linear infinite;
-  margin:0 auto 20px;
-}
-@keyframes spin { to { transform:rotate(360deg);} }
+body { font-family:-apple-system, system-ui, sans-serif; background:var(--bg);
+  display:flex; align-items:center; justify-content:center; height:100vh; margin:0; color:#1d1d1f;}
+.container { background:white; padding:2.5rem; border-radius:24px;
+  box-shadow:0 8px 30px rgba(0,0,0,.1); width:90%; max-width:380px; text-align:center;}
+.loader { border:4px solid #f3f3f3; border-top:4px solid var(--primary);
+  border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:0 auto 20px;}
+@keyframes spin { to { transform:rotate(360deg); } }
 .status { font-size:1.1rem; font-weight:600; color:var(--primary); }
 #manualInput { display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px; }
-input {
-  width:100%; padding:12px; border:1px solid #d2d2d7;
-  border-radius:10px; margin-bottom:12px; font-size:16px;
-}
-button {
-  width:100%; padding:12px; background:var(--primary);
-  color:white; border:none; border-radius:10px;
-  font-weight:600; cursor:pointer;
-}
+input { width:100%; padding:12px; border:1px solid #d2d2d7; border-radius:10px; margin-bottom:12px; font-size:16px;}
+button { width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer;}
 .error-text { color:var(--error); font-size:.9rem; }
 </style>
 </head>
-
 <body>
 <div class="container">
   <div id="loader" class="loader"></div>
@@ -67,80 +34,71 @@ button {
 </div>
 
 <script>
-/* ================== CẤU HÌNH ================== */
-const SHEET_LOG_URL = "https://script.google.com/macros/s/XXXX/exec";
+const SHEET_LOG_URL = "https://script.google.com/macros/s/YOUR_DEPLOY_ID/exec";
 const CSV_FILE = "data.csv";
 const CACHE_KEY = "csv_cache";
 const CACHE_TIME = 5*60*1000;
 
-/* ================== UI ================== */
 const statusEl = document.getElementById("status");
 const loaderEl = document.getElementById("loader");
 const manualInputEl = document.getElementById("manualInput");
 
-function setUI(msg, error=false) {
+function setUI(msg, error=false){
   statusEl.textContent = msg;
-  statusEl.style.color = error ? "var(--error)" : "var(--primary)";
-  loaderEl.style.display = error ? "none" : "block";
-  manualInputEl.style.display = error ? "block" : "none";
+  statusEl.style.color = error?"var(--error)":"var(--primary)";
+  loaderEl.style.display = error?"none":"block";
+  manualInputEl.style.display = error?"block":"none";
 }
 
-/* ================== CSV ================== */
-async function loadCSV() {
+async function loadCSV(){
   const cached = localStorage.getItem(CACHE_KEY);
-  if (cached) {
+  if(cached){
     const obj = JSON.parse(cached);
-    if (Date.now()-obj.time < CACHE_TIME) return obj.data;
+    if(Date.now()-obj.time < CACHE_TIME) return obj.data;
   }
   const res = await fetch(CSV_FILE);
-  if (!res.ok) throw new Error("Không tải được dữ liệu CSV");
+  if(!res.ok) throw new Error("Không tải được dữ liệu CSV");
   const text = await res.text();
-  const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
-  localStorage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), data: parsed.data }));
+  const parsed = Papa.parse(text,{header:true,skipEmptyLines:true});
+  localStorage.setItem(CACHE_KEY,JSON.stringify({time:Date.now(),data:parsed.data}));
   return parsed.data;
 }
 
-/* ================== XỬ LÝ ID ================== */
-async function processID(id, source) {
-  if (!id) return;
+async function processID(id, source){
+  if(!id) return;
   const target = id.trim().toUpperCase();
   setUI(`Đang xử lý ID: ${target}...`);
-
-  try {
+  try{
     const data = await loadCSV();
-    const row = data.find(r => r.ID?.trim().toUpperCase() === target);
-    if (!row || !row.LINKS) throw new Error("ID chưa được đăng ký");
+    const row = data.find(r => r.ID?.trim().toUpperCase()===target);
+    if(!row || !row.LINKS) throw new Error("ID chưa được đăng ký");
 
-    // Gửi log CHỈ KHI QUÉT NFC
-    if (source === "nfc") {
+    if(source==="nfc"){
       const q = new URLSearchParams({
         id: row.ID,
-        toa_nha: row.TEN_TOA_NHA || "",
+        toa_nha: row.TEN_TOA_NHA||"",
         links: row.LINKS,
-        source: "nfc"
+        source:"nfc"
       });
-      fetch(`${SHEET_LOG_URL}?${q}`, { mode:"no-cors" });
+      fetch(`${SHEET_LOG_URL}?${q}`, {mode:"no-cors"});
     }
 
     setUI("✅ Thành công! Đang chuyển hướng...");
     setTimeout(()=>location.replace(row.LINKS),500);
 
-  } catch(e) {
-    setUI(e.message,true);
-  }
+  }catch(e){ setUI(e.message,true); }
 }
 
-/* ================== KHỞI CHẠY ================== */
 const urlParams = new URLSearchParams(location.search);
 const idParam = urlParams.get("id");
-const sourceParam = urlParams.get("source"); // lấy source từ URL
+const sourceParam = urlParams.get("source");
 
-if (idParam) processID(idParam, sourceParam);
+if(idParam) processID(idParam, sourceParam);
 else setUI("Vui lòng quét thẻ NFC",true);
 
-document.getElementById("submitId").onclick = ()=>{
+document.getElementById("submitId").onclick=()=>{
   const v = document.getElementById("inputId").value;
-  if(v) processID(v, "manual"); // submit thủ công không ghi log
+  if(v) processID(v,"manual"); // thủ công không ghi log
 };
 </script>
 </body>
