@@ -5,7 +5,7 @@
   <title>NFC Smart System - Notegroup</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- Thư viện xử lý dữ liệu CSV -->
+  <!-- SỬ DỤNG CDN ĐỂ KHẮC PHỤC LỖI "Can't find variable: Papa" -->
   <script src="cdn.jsdelivr.net"></script>
   
   <style>
@@ -38,8 +38,9 @@
 /**
  * CẤU HÌNH HỆ THỐNG 2025
  */
+// URL Google Apps Script Web App MỚI NHẤT CỦA BẠN
 const SHEET_LOG_URL = "script.google.com";
-const CSV_FILE = "data.csv"; 
+const CSV_FILE = "data.csv"; // File này phải nằm cùng thư mục trên GitHub
 
 const statusEl = document.getElementById("status");
 const loaderEl = document.getElementById("loader");
