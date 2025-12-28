@@ -6,31 +6,67 @@
 <title>📡 NFC Scan</title>
 <style>
 body { font-family: Arial; text-align:center; padding:40px; }
-#status { font-size:18px; margin-top:20px; }
+#status { font-size:18px; margin-top:20px; margin-top:20px; }
 </style>
 </head>
 <body>
 <h2>📡 NFC Scan</h2>
-<p id="status">Đang xử lý...</p>
+<p>Upload data.csv trước:</p>
+<input type="file" id="csvFile" accept=".csv"><br><br>
+<p id="status">Chưa có dữ liệu</p>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
-// Mảng mapping ID -> link
-const buildings = {
-  "TTS-BA-G1.1": "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=TTS-BA-G1.1",
-  "TTS-BA-G2.2": "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=TTS-BA-G2.2"
-  // Thêm các ID khác tại đây
-};
+let csvData = {};
 
+document.getElementById("csvFile").addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results){
+      csvData = {};
+      results.data.forEach(row => {
+        if(row.ID) csvData[row.ID] = {TEN_TOA_NHA: row.TEN_TOA_NHA, LINK: row.LINK};
+      });
+      document.getElementById("status").innerText = "✅ CSV đã load thành công!";
+      console.log("CSV data:", csvData);
+    }
+  });
+});
+
+// Lấy ID từ URL NFC và redirect
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
-if(!id){
-  document.getElementById("status").innerText = "❌ Không có ID!";
-}else{
-  const link = buildings[id] || "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=" + encodeURIComponent(id);
+function redirectNFC() {
+  if(!id) {
+    document.getElementById("status").innerText = "❌ Không có ID!";
+    return;
+  }
+
+  if(!csvData[id]) {
+    document.getElementById("status").innerText = "❌ ID không có trong CSV, dùng link mặc định";
+    window.location.href = "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=" + encodeURIComponent(id);
+    return;
+  }
+
+  const link = csvData[id].LINK;
   document.getElementById("status").innerText = "✅ Quét NFC thành công! Chuyển hướng...";
-  window.location.href = link;
+  
+  // Ghi log background
+  const webAppURL = "https://script.google.com/macros/s/AKfycbxTi0fXYzISLRLZiVc86XcEqhhoMgr8DkNG66tCXRjymWoGL-6rcRvp4-J0R6-S1vDe/exec"; // Thay YOUR_SCRIPT_ID
+  fetch(webAppURL + "?id=" + encodeURIComponent(id))
+    .finally(() => {
+      window.location.href = link; // Redirect ngay sau khi gửi log
+    });
 }
+
+// Chờ CSV load trước khi redirect
+document.getElementById("csvFile").addEventListener("change", () => {
+  setTimeout(redirectNFC, 500); // delay nhỏ cho CSV parse
+});
 </script>
 </body>
 </html>
