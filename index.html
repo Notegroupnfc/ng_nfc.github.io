@@ -34,7 +34,7 @@ button { width:100%; padding:12px; background:var(--primary); color:white; borde
 
 <script>
 const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbwGQiiUzE0bUvxXkwy-QLZWefvQqS6T-mYSZFg7tLFxglkmNj2zCU4_JQFmIGT9sftdhw/exec";
-const CSV_FILE = "data.csv"; // CSV chứa ID, TEN_TOA_NHA, LINKS
+const CSV_FILE = "data.csv";
 const CACHE_KEY = "csv_cache";
 const CACHE_TIME = 5*60*1000;
 
@@ -73,7 +73,6 @@ async function processID(id,source){
     const row = data.find(r=>r.ID?.trim().toUpperCase()===target);
     if(!row || !row.LINKS) throw new Error("ID chưa đăng ký hoặc không có link");
 
-    // Gửi log lên GAS
     const params = new URLSearchParams({
       id: row.ID,
       toa_nha: row.TEN_TOA_NHA || "",
@@ -93,7 +92,6 @@ async function processID(id,source){
   }catch(e){ setUI(e.message,true);}
 }
 
-// Lấy params URL
 const urlParams = new URLSearchParams(location.search);
 const idParam = urlParams.get("id");
 const sourceParam = urlParams.get("source");
@@ -101,7 +99,6 @@ const sourceParam = urlParams.get("source");
 if(idParam) processID(idParam,sourceParam);
 else setUI("Vui lòng quét thẻ NFC",true);
 
-// Xử lý input thủ công
 document.getElementById("submitId").onclick=()=>{
   const v=document.getElementById("inputId").value;
   if(v) processID(v,"manual");
