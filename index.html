@@ -2,13 +2,45 @@
 <html>
 <head>
   <base target="_top">
-  <script src="cdnjs.cloudflare.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- PapaParse -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+    }
+    .box {
+      max-width: 400px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    #msg {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
 </head>
+
 <body>
-  <div style="padding: 20px; text-align: center; font-family: sans-serif;">
-    <h3>Tải lên data.csv</h3>
+  <div class="box">
+    <h3>Tải lên file CSV</h3>
+
     <input type="file" id="csvFile" accept=".csv"><br><br>
-    <button onclick="upload()" style="padding: 10px 20px;">GHI NHẬT KÝ</button>
+
+    <button onclick="upload()">GHI NHẬT KÝ</button>
+
     <p id="msg"></p>
   </div>
 
@@ -16,19 +48,30 @@
     function upload() {
       const file = document.getElementById('csvFile').files[0];
       const msg = document.getElementById('msg');
-      if (!file) { alert("Chọn file trước!"); return; }
 
-      msg.innerText = "Đang xử lý...";
+      if (!file) {
+        alert("Vui lòng chọn file CSV!");
+        return;
+      }
+
+      msg.innerText = "⏳ Đang xử lý...";
+
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: function(results) {
+        complete: function (results) {
           google.script.run
-            .withSuccessHandler(res => { 
-                msg.innerText = res; 
-                document.getElementById('csvFile').value = ""; 
+            .withSuccessHandler(res => {
+              msg.innerText = "✅ " + res;
+              document.getElementById('csvFile').value = "";
+            })
+            .withFailureHandler(err => {
+              msg.innerText = "❌ Lỗi: " + err.message;
             })
             .processDataFromCSV(results.data);
+        },
+        error: function () {
+          msg.innerText = "❌ Không đọc được file CSV!";
         }
       });
     }
