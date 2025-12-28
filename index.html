@@ -6,7 +6,7 @@
 <title>📡 NFC Scan</title>
 <style>
 body { font-family: Arial; text-align:center; padding:40px; }
-#status { font-size:18px; margin-top:20px; margin-top:20px; }
+#status { font-size:18px; margin-top:20px; }
 </style>
 </head>
 <body>
@@ -31,42 +31,35 @@ document.getElementById("csvFile").addEventListener("change", function(e){
         if(row.ID) csvData[row.ID] = {TEN_TOA_NHA: row.TEN_TOA_NHA, LINK: row.LINK};
       });
       document.getElementById("status").innerText = "✅ CSV đã load thành công!";
-      console.log("CSV data:", csvData);
+      // Nếu NFC ID đã có trong URL, redirect ngay
+      redirectNFC();
     }
   });
 });
 
-// Lấy ID từ URL NFC và redirect
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
 function redirectNFC() {
-  if(!id) {
-    document.getElementById("status").innerText = "❌ Không có ID!";
-    return;
-  }
+  if(!id) return;
 
-  if(!csvData[id]) {
+  let link;
+  if(csvData[id]) {
+    link = csvData[id].LINK;
+    document.getElementById("status").innerText = "✅ Quét NFC thành công! Chuyển hướng...";
+  } else {
+    link = "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=" + encodeURIComponent(id);
     document.getElementById("status").innerText = "❌ ID không có trong CSV, dùng link mặc định";
-    window.location.href = "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=" + encodeURIComponent(id);
-    return;
   }
 
-  const link = csvData[id].LINK;
-  document.getElementById("status").innerText = "✅ Quét NFC thành công! Chuyển hướng...";
-  
-  // Ghi log background
+  // Redirect trực tiếp từ user gesture
+  window.location.href = link;
+
+  // Ghi log background (không block redirect)
   const webAppURL = "https://script.google.com/macros/s/AKfycbxTi0fXYzISLRLZiVc86XcEqhhoMgr8DkNG66tCXRjymWoGL-6rcRvp4-J0R6-S1vDe/exec"; // Thay YOUR_SCRIPT_ID
   fetch(webAppURL + "?id=" + encodeURIComponent(id))
-    .finally(() => {
-      window.location.href = link; // Redirect ngay sau khi gửi log
-    });
+    .catch(err => console.error("Lỗi ghi log:", err));
 }
-
-// Chờ CSV load trước khi redirect
-document.getElementById("csvFile").addEventListener("change", () => {
-  setTimeout(redirectNFC, 500); // delay nhỏ cho CSV parse
-});
 </script>
 </body>
 </html>
