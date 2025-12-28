@@ -9,16 +9,25 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
-    const source = params.get("source"); // có thể dùng để phân biệt NFC
+    const source = params.get("source") || "web";
 
     if (!id) {
       document.body.innerHTML = "Thiếu ID NFC";
     } else {
-      // Gọi Web App Google Script, truyền cả source
-      const webAppUrl = "https://script.google.com/macros/s/AKfycbwAfSR3SOdz3FtGdQEiPHDtO4jevCBZq2VVXRYfB6FF8Llsu-gwCCXcj7ozdQc8d1qC/exec?id=" 
-                        + encodeURIComponent(id)
-                        + "&source=" + encodeURIComponent(source || "web");
-      window.location.href = webAppUrl;
+      // Gọi Web App Google Script để ghi log
+      const webAppUrl = "https://script.google.com/macros/s/AKfycbyQVInfcvjJHALaA-Pl0WElyt9OaD4Gzexhb2IYSSRjpFYl4gfwSZIOSCcj_ket4pkq/exec?id=" 
+                          + encodeURIComponent(id) 
+                          + "&source=" + encodeURIComponent(source);
+
+      fetch(webAppUrl)
+        .then(response => response.text())
+        .then(link => {
+          // Mở link trực tiếp, chỉ một lần
+          window.location.href = link.trim();
+        })
+        .catch(err => {
+          document.body.innerHTML = "Lỗi khi ghi log: " + err;
+        });
     }
   </script>
 </body>
