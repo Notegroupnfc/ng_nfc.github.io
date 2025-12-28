@@ -1,29 +1,14 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NFC Scan</title>
-<style>
-  body { font-family: Arial; padding: 40px; text-align:center; }
-  .ok { color: green; font-weight:bold; }
-</style>
-</head>
-<body>
-<h2>📡 NFC Scan</h2>
-<p id="status">Đang xử lý...</p>
-
 <script>
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 if (!id) {
   document.getElementById("status").innerText = "❌ Không tìm thấy ID!";
 } else {
-  // Thay YOUR_SCRIPT_URL bằng URL Web App
   const scriptUrl = "https://script.google.com/macros/s/AKfycbwjwNnH86JMc0QVkcNqiAm9HWD9eke_UXQVg2BMdNT1XyupkKOJSVbIx-yFizhFkxzB/exec";
   fetch(scriptUrl + "?id=" + encodeURIComponent(id) + "&source=nfc")
     .then(res => res.text())
     .then(html => {
+      // Mở link do Apps Script trả về
       document.open();
       document.write(html);
       document.close();
@@ -34,5 +19,3 @@ if (!id) {
     });
 }
 </script>
-</body>
-</html>
