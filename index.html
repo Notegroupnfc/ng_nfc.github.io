@@ -1,80 +1,38 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>NFC Check</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      text-align: center;
-      padding: 40px 20px;
-    }
-    .box {
-      background: #ffffff;
-      max-width: 420px;
-      margin: auto;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    h2 {
-      margin-bottom: 10px;
-    }
-    #status {
-      margin-top: 15px;
-      font-size: 16px;
-      font-weight: bold;
-    }
-    .ok { color: green; }
-    .err { color: red; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFC Scan</title>
+<style>
+  body { font-family: Arial; padding: 40px; text-align:center; }
+  .ok { color: green; font-weight:bold; }
+</style>
 </head>
-
 <body>
-  <div class="box">
-    <h2>📡 NFC Scan</h2>
-    <p id="info">Đang xử lý...</p>
-    <p id="status"></p>
-  </div>
+<h2>📡 NFC Scan</h2>
+<p id="status">Đang xử lý...</p>
 
-  <script>
-    // ===== LẤY PARAM TỪ URL NFC =====
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
-    const source = params.get("source") || "nfc";
-
-    const infoEl = document.getElementById("info");
-    const statusEl = document.getElementById("status");
-
-    if (!id) {
-      infoEl.innerText = "❌ Không tìm thấy ID từ NFC";
-      statusEl.className = "err";
-      statusEl.innerText = "Link NFC không hợp lệ";
-    } else {
-      infoEl.innerText = `ID: ${id}`;
-
-      // ===== URL GOOGLE APPS SCRIPT (THAY LINK CỦA BẠN) =====
-      const GAS_URL =
-        "https://script.google.com/macros/s/AKfycbxCUnyO0l38bP3Je3YVjYVShRn0gJo4lkKghRfirtJEGRzUjKL5wO_SGqDcQPihJh-O/exec";
-
-      fetch(
-        `${GAS_URL}?id=${encodeURIComponent(id)}&source=${encodeURIComponent(source)}`,
-        { method: "GET" }
-      )
-      .then(res => res.text())
-      .then(text => {
-        statusEl.className = "ok";
-        statusEl.innerText = "✅ " + text;
-      })
-      .catch(err => {
-        statusEl.className = "err";
-        statusEl.innerText = "❌ Lỗi kết nối server";
-        console.error(err);
-      });
-    }
-  </script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+if (!id) {
+  document.getElementById("status").innerText = "❌ Không tìm thấy ID!";
+} else {
+  // Thay YOUR_SCRIPT_URL bằng URL Web App
+  const scriptUrl = "https://script.google.com/macros/s/AKfycbwjwNnH86JMc0QVkcNqiAm9HWD9eke_UXQVg2BMdNT1XyupkKOJSVbIx-yFizhFkxzB/exec";
+  fetch(scriptUrl + "?id=" + encodeURIComponent(id) + "&source=nfc")
+    .then(res => res.text())
+    .then(html => {
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(err => {
+      document.getElementById("status").innerText = "❌ Lỗi server";
+      console.error(err);
+    });
+}
+</script>
 </body>
 </html>
