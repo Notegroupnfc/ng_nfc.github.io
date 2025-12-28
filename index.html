@@ -1,69 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <base target="_top">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFC Redirect</title>
-
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding-top: 60px;
-        background: #f9f9f9;
-        color: #333;
-      }
-      .loader {
-        margin: 20px auto;
-        width: 40px;
-        height: 40px;
-        border: 4px solid #ddd;
-        border-top: 4px solid #4285f4;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .error {
-        color: red;
-        margin-top: 20px;
-      }
-    </style>
   </head>
-
   <body>
     <h3>Đang xử lý NFC...</h3>
-    <div class="loader"></div>
-    <div id="msg"></div>
-
     <script>
-      // Lấy ID từ URL
       const params = new URLSearchParams(window.location.search);
       const id = params.get("id");
 
       if (!id) {
-        document.getElementById("msg").innerHTML =
-          "<div class='error'>Thiếu ID NFC</div>";
+        document.body.innerHTML = "Thiếu ID NFC";
       } else {
-        // Gọi Apps Script xử lý log
-        google.script.run
-          .withSuccessHandler(function (redirectUrl) {
-            if (redirectUrl) {
-              window.location.href = redirectUrl;
-            } else {
-              document.getElementById("msg").innerHTML =
-                "<div class='error'>Không tìm thấy link chuyển hướng</div>";
-            }
-          })
-          .withFailureHandler(function (err) {
-            document.getElementById("msg").innerHTML =
-              "<div class='error'>Lỗi xử lý NFC</div>";
-            console.error(err);
-          })
-          .processNFC(id);
+        // Gọi Web App Google Script
+        const webAppUrl = "https://script.google.com/macros/s/AKfycbx16ElhczyEfHkol-GBJhVfZ_PZSqG6-Cf9Bpij0V8BAeZzsrn5AAYP2a923gjEUho/exec?id=" + id;
+        window.location.href = webAppUrl;
       }
     </script>
   </body>
