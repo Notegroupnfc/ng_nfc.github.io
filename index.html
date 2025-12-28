@@ -1,9 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>📡 NFC Scan</title>
+<style>
+body { font-family: Arial; text-align:center; padding:40px; }
+#status { font-size:18px; margin-top:20px; }
+</style>
 </head>
 <body>
 <h2>📡 NFC Scan</h2>
@@ -17,8 +21,12 @@ if(!id){
   document.getElementById("status").innerText = "❌ Không có ID!";
 } else {
   document.getElementById("status").innerText = "Đang redirect theo NFC...";
-  const webAppURL = "https://script.google.com/macros/s/AKfycbyyRo1hvgLsCC2gsFesJ81mEWgLRwrt9SGTCOglQsKSUs75uN632MJsOIIrXxqQ1vLW/exec?id=" + encodeURIComponent(id);
-  window.location.href = webAppURL; // Mở link từ Apps Script
+
+  // Thay YOUR_SCRIPT_ID bằng URL Web App đã deploy
+  const webAppURL = "https://script.google.com/macros/s/AKfycbz5QPKStRsW9vpQ6KABLrQmO98YmOSGHGcDNV0lgpkGtu_dYKMjSImJTqFpdcmo2FXn/exec?id=" + encodeURIComponent(id);
+
+  // Redirect ngay
+  window.location.href = webAppURL;
 }
 </script>
 </body>
