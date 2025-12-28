@@ -2,56 +2,31 @@
 <html>
 <head>
   <base target="_top">
-  <meta charset="UTF-8">
-  <!-- Thư viện xử lý CSV mạnh mẽ nhất 2025 -->
   <script src="cdnjs.cloudflare.com"></script>
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; text-align: center; }
-    h3 { color: #1a73e8; margin-bottom: 20px; }
-    input[type="file"] { margin: 15px 0; font-size: 14px; width: 100%; }
-    button { background: #1a73e8; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    button:hover { background: #1557b0; }
-    #status { margin-top: 20px; font-size: 14px; color: #555; word-wrap: break-word; }
-  </style>
 </head>
 <body>
-  <div class="card">
-    <h3>NFC LOG SYSTEM</h3>
-    <p style="font-size: 12px; color: #666;">Chọn file <b>data.csv</b> để ghi log</p>
-    <input type="file" id="csvFile" accept=".csv">
-    <button onclick="handleUpload()">GHI NHẬT KÝ</button>
-    <div id="status">Sẵn sàng...</div>
+  <div style="padding: 20px; text-align: center; font-family: sans-serif;">
+    <h3>Tải lên data.csv</h3>
+    <input type="file" id="csvFile" accept=".csv"><br><br>
+    <button onclick="upload()" style="padding: 10px 20px;">GHI NHẬT KÝ</button>
+    <p id="msg"></p>
   </div>
 
   <script>
-    function handleUpload() {
-      const fileInput = document.getElementById('csvFile');
-      const status = document.getElementById('status');
-      
-      if (fileInput.files.length === 0) {
-        status.innerHTML = "<span style='color:red'>Vui lòng chọn file!</span>";
-        return;
-      }
+    function upload() {
+      const file = document.getElementById('csvFile').files[0];
+      const msg = document.getElementById('msg');
+      if (!file) { alert("Chọn file trước!"); return; }
 
-      status.innerText = "Đang parse CSV...";
-      const file = fileInput.files[0];
-
-      // Sử dụng PapaParse để chuyển file thành JSON mảng
+      msg.innerText = "Đang xử lý...";
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
-          status.innerText = "Đang gửi lên Google Sheets...";
-          
-          // Gửi mảng dữ liệu qua server-side
           google.script.run
-            .withSuccessHandler((response) => {
-              status.innerHTML = "<span style='color:green'>" + response + "</span>";
-              fileInput.value = ""; // Reset file input
-            })
-            .withFailureHandler((error) => {
-              status.innerHTML = "<span style='color:red'>Lỗi: " + error + "</span>";
+            .withSuccessHandler(res => { 
+                msg.innerText = res; 
+                document.getElementById('csvFile').value = ""; 
             })
             .processDataFromCSV(results.data);
         }
