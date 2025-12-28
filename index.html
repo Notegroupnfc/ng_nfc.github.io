@@ -1,61 +1,24 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NFC Scan</title>
-<style>
-body { font-family: Arial; text-align:center; padding:40px; }
-#status { font-size:18px; margin-top:20px; }
-</style>
+<title>📡 NFC Scan</title>
 </head>
 <body>
 <h2>📡 NFC Scan</h2>
-<p id="status">Đang xử lý data.csv...</p>
+<p id="status">Đang xử lý...</p>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
-const csvURL = "https://raw.githubusercontent.com/Notegroupnfc/ng_nfc.github.io/main/data.csv";
-let csvData = {};
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
 
-Papa.parse(csvURL, {
-  download: true,
-  header: true,
-  skipEmptyLines: true,
-  complete: function(results) {
-    results.data.forEach(row => {
-      if(row.ID) {
-        csvData[row.ID] = {
-          TEN_TOA_NHA: row.TEN_TOA_NHA,
-          LINK: row.LINK
-        };
-      }
-    });
-    document.getElementById("status").innerText = "CSV đã tải thành công!";
-    redirectByID();
-  },
-  error: function(err) {
-    document.getElementById("status").innerText = "❌ Không tải được data.csv";
-    console.error(err);
-  }
-});
-
-function redirectByID() {
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-  if(!id) {
-    document.getElementById("status").innerText = "❌ Không có ID!";
-    return;
-  }
-
-  const info = csvData[id];
-  if(info && info.LINK) {
-    document.getElementById("status").innerText = `Đang chuyển hướng tới ${info.TEN_TOA_NHA}...`;
-    // Redirect ngay
-    window.location.href = info.LINK;
-  } else {
-    document.getElementById("status").innerText = "❌ ID không tìm thấy trong CSV!";
-  }
+if(!id){
+  document.getElementById("status").innerText = "❌ Không có ID!";
+} else {
+  document.getElementById("status").innerText = "Đang redirect theo NFC...";
+  const webAppURL = "https://script.google.com/macros/s/AKfycbyyRo1hvgLsCC2gsFesJ81mEWgLRwrt9SGTCOglQsKSUs75uN632MJsOIIrXxqQ1vLW/exec?id=" + encodeURIComponent(id);
+  window.location.href = webAppURL; // Mở link từ Apps Script
 }
 </script>
 </body>
