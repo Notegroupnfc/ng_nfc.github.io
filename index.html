@@ -5,18 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>📡 NFC Scan</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  padding: 40px;
-  text-align: center;
-}
-h2 {
-  margin-bottom: 20px;
-}
-#status {
-  margin-top: 20px;
-  font-size: 18px;
-}
+body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+h2 { margin-bottom: 20px; }
+#status { margin-top: 20px; font-size: 18px; }
 </style>
 </head>
 <body>
@@ -30,10 +21,10 @@ const id = params.get("id");
 if (!id) {
   document.getElementById("status").innerText = "❌ Không có ID!";
 } else {
-  // Thay YOUR_SCRIPT_ID bằng ID Web App (URL /exec)
-  const webAppURL = "https://script.google.com/macros/s/AKfycbzgyboJasibHWFFsYYj47hwxd7SCaAm_ORjSlaHI9VQWnrQzkuo6ST9zFEZBxoE8QRS/exec";
+  // Thay YOUR_SCRIPT_ID bằng Web App URL /exec
+  const webAppURL = "https://script.google.com/macros/s/AKfycbyFVidj3tbLQ5CNl-3saOhtXzdNwglPjUOWBZRKavAuNDMqOtFDB1okBCqN2BAHqdNy/exec";
 
-  // Mở Web App trực tiếp → Apps Script sẽ ghi log + redirect link theo ID
+  // Mở Web App → Apps Script sẽ ghi log + redirect link theo ID
   window.location.href = webAppURL + "?id=" + encodeURIComponent(id) + "&source=nfc";
 }
 </script>
