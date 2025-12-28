@@ -4,32 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>📡 NFC Scan</title>
-<style>
-body { font-family: Arial; text-align:center; padding:40px; }
-#status { font-size:18px; margin-top:20px; }
-</style>
 </head>
 <body>
-<h2>📡 NFC Scan</h2>
-<p id="status">Đang xử lý...</p>
-
+<p>Đang xử lý NFC...</p>
 <script>
-// Mảng mapping ID -> link
-const buildings = {
-  "TTS-BA-G1.1": "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=TTS-BA-G1.1",
-  "TTS-BA-G2.2": "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=TTS-BA-G2.2"
-  // Thêm các ID khác tại đây
-};
-
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
-
-if(!id){
-  document.getElementById("status").innerText = "❌ Không có ID!";
-}else{
-  const link = buildings[id] || "https://notegroupnfc.github.io/ng_nfc.github.io/index.html?id=" + encodeURIComponent(id);
-  document.getElementById("status").innerText = "✅ Quét NFC thành công! Chuyển hướng...";
-  window.location.href = link;
+if (!id) {
+  document.body.innerText = "❌ Không có ID!";
+} else {
+  // Thay YOUR_SCRIPT_ID bằng Web App URL /exec
+  const webAppURL = "https://script.google.com/macros/s/AKfycbwQ17GdYI89CxM0ebcUyEDRKL9Wx7aNuN0tdrdlPX_wH1AKMToUcldDDbbW1kikLuIZ/exec";
+  // Redirect để Apps Script ghi log + mở link đúng ID
+  window.location.href = webAppURL + "?id=" + encodeURIComponent(id) + "&source=nfc";
 }
 </script>
 </body>
