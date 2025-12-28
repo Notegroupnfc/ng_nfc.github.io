@@ -1,74 +1,62 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Log System</title>
-    <!-- Tải PapaParse từ CDN -->
-    <script src="cdnjs.cloudflare.com"></script>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; text-align: center; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        button { background: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; }
-        button:disabled { background: #ccc; }
-        #status { margin-top: 15px; font-weight: bold; color: #555; }
-        .success { color: green !important; }
-        .error { color: red !important; }
-    </style>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <!-- Thư viện xử lý CSV mạnh mẽ nhất 2025 -->
+  <script src="cdnjs.cloudflare.com"></script>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+    h3 { color: #1a73e8; margin-bottom: 20px; }
+    input[type="file"] { margin: 15px 0; font-size: 14px; width: 100%; }
+    button { background: #1a73e8; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #1557b0; }
+    #status { margin-top: 20px; font-size: 14px; color: #555; word-wrap: break-word; }
+  </style>
 </head>
 <body>
-
-<div class="card">
-    <h2>QUÉT THẺ NFC</h2>
-    <p>Nhấn nút bên dưới để bắt đầu quét</p>
-    
-    <button id="scanBtn">BẮT ĐẦU QUÉT NFC</button>
-    
+  <div class="card">
+    <h3>NFC LOG SYSTEM</h3>
+    <p style="font-size: 12px; color: #666;">Chọn file <b>data.csv</b> để ghi log</p>
+    <input type="file" id="csvFile" accept=".csv">
+    <button onclick="handleUpload()">GHI NHẬT KÝ</button>
     <div id="status">Sẵn sàng...</div>
-</div>
+  </div>
 
-<script>
-    const scanBtn = document.getElementById('scanBtn');
-    const statusDiv = document.getElementById('status');
+  <script>
+    function handleUpload() {
+      const fileInput = document.getElementById('csvFile');
+      const status = document.getElementById('status');
+      
+      if (fileInput.files.length === 0) {
+        status.innerHTML = "<span style='color:red'>Vui lòng chọn file!</span>";
+        return;
+      }
 
-    // Hàm gửi dữ liệu về Google Apps Script
-    function sendLogToGas(csvString) {
-        statusDiv.innerText = "Đang gửi dữ liệu...";
-        
-        google.script.run
-            .withSuccessHandler((res) => {
-                statusDiv.innerHTML = "<span class='success'>Đã ghi Log vào 2 Sheet!</span>";
-                console.log(res);
+      status.innerText = "Đang parse CSV...";
+      const file = fileInput.files[0];
+
+      // Sử dụng PapaParse để chuyển file thành JSON mảng
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          status.innerText = "Đang gửi lên Google Sheets...";
+          
+          // Gửi mảng dữ liệu qua server-side
+          google.script.run
+            .withSuccessHandler((response) => {
+              status.innerHTML = "<span style='color:green'>" + response + "</span>";
+              fileInput.value = ""; // Reset file input
             })
-            .withFailureHandler((err) => {
-                statusDiv.innerHTML = "<span class='error'>Lỗi: " + err + "</span>";
+            .withFailureHandler((error) => {
+              status.innerHTML = "<span style='color:red'>Lỗi: " + error + "</span>";
             })
-            .processNfcData(csvString); // Gọi hàm processNfcData trong Code.gs
-    }
-
-    // Xử lý quét NFC (Chỉ chạy trên trình duyệt di động hỗ trợ Web NFC như Chrome Android)
-    scanBtn.addEventListener('click', async () => {
-        if ('NDEFReader' in window) {
-            try {
-                const ndef = new NDEFReader();
-                await ndef.scan();
-                statusDiv.innerText = "Đang chờ thẻ NFC...";
-
-                ndef.addEventListener("reading", ({ message, serialNumber }) => {
-                    // Tạo dữ liệu CSV giả lập từ thẻ NFC
-                    const userName = "User_" + serialNumber.substring(0,5);
-                    const csvContent = `NFC_ID,UserName,Location\n${serialNumber},${userName},Cua_Chinh`;
-                    
-                    // Gửi đi xử lý
-                    sendLogToGas(csvContent);
-                });
-            } catch (error) {
-                statusDiv.innerText = "Lỗi quét: " + error;
-            }
-        } else {
-            statusDiv.innerHTML = "<span class='error'>Trình duyệt không hỗ trợ Web NFC.</span><br>Dùng thử App NFC Tools gửi POST.";
+            .processDataFromCSV(results.data);
         }
-    });
-</script>
+      });
+    }
+  </script>
 </body>
 </html>
