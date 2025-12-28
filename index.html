@@ -1,9 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NFC Scan</title>
+<title>📡 NFC Scan</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 40px;
+  text-align: center;
+}
+h2 {
+  margin-bottom: 20px;
+}
+#status {
+  margin-top: 20px;
+  font-size: 18px;
+}
+</style>
 </head>
 <body>
 <h2>📡 NFC Scan</h2>
@@ -12,12 +26,15 @@
 <script>
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
-if(!id){
-  document.getElementById("status").innerText="❌ Không có ID!";
-}else{
-  const webAppURL="https://script.google.com/macros/s/AKfycbwtUw1bl7yLwG2thnp_SClMDKP7pwYFBgr9NXWs7MBq3lMnGDAnRRpXMR16Gdu3vYIj/exec"; // Thay YOUR_SCRIPT_ID
-  // Mở trực tiếp Web App → Apps Script sẽ redirect link theo ID
-  window.location.href = webAppURL+"?id="+encodeURIComponent(id)+"&source=nfc";
+
+if (!id) {
+  document.getElementById("status").innerText = "❌ Không có ID!";
+} else {
+  // Thay YOUR_SCRIPT_ID bằng ID Web App (URL /exec)
+  const webAppURL = "https://script.google.com/macros/s/AKfycbzgyboJasibHWFFsYYj47hwxd7SCaAm_ORjSlaHI9VQWnrQzkuo6ST9zFEZBxoE8QRS/exec";
+
+  // Mở Web App trực tiếp → Apps Script sẽ ghi log + redirect link theo ID
+  window.location.href = webAppURL + "?id=" + encodeURIComponent(id) + "&source=nfc";
 }
 </script>
 </body>
