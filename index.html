@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>NFC Redirect</title>
-  </head>
-  <body>
-    <h3>Đang xử lý NFC...</h3>
-    <script>
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get("id");
+<head>
+  <meta charset="UTF-8">
+  <title>NFC Redirect</title>
+</head>
+<body>
+  <h3>Đang xử lý NFC...</h3>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const source = params.get("source"); // có thể dùng để phân biệt NFC
 
-      if (!id) {
-        document.body.innerHTML = "Thiếu ID NFC";
-      } else {
-        // Gọi Web App Google Script
-        const webAppUrl = "https://script.google.com/macros/s/AKfycbzHjYhA6wzjDgKGEfl9VQikPfUeBz3IyQjB_MUuqoG8sWsLAmz-aWqR88SgU_RL4Dvh/exec?id=" + id;
-        window.location.href = webAppUrl;
-      }
-    </script>
-  </body>
+    if (!id) {
+      document.body.innerHTML = "Thiếu ID NFC";
+    } else {
+      // Gọi Web App Google Script, truyền cả source
+      const webAppUrl = "https://script.google.com/macros/s/AKfycbwAfSR3SOdz3FtGdQEiPHDtO4jevCBZq2VVXRYfB6FF8Llsu-gwCCXcj7ozdQc8d1qC/exec?id=" 
+                        + encodeURIComponent(id)
+                        + "&source=" + encodeURIComponent(source || "web");
+      window.location.href = webAppUrl;
+    }
+  </script>
+</body>
 </html>
