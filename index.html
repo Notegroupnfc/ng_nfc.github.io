@@ -4,27 +4,22 @@
 <meta charset="UTF-8">
 <title>NFC Smart System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
-:root { --primary:#007aff; --bg:#f5f5f7; --error:#ff3b30; }
-body { font-family:-apple-system, system-ui, sans-serif; background:var(--bg);
-  display:flex; align-items:center; justify-content:center; height:100vh; margin:0; color:#1d1d1f;}
-.container { background:white; padding:2.5rem; border-radius:24px;
-  box-shadow:0 8px 30px rgba(0,0,0,.1); width:90%; max-width:380px; text-align:center;}
-.loader { border:4px solid #f3f3f3; border-top:4px solid var(--primary);
-  border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:0 auto 20px;}
+body { font-family:-apple-system, system-ui, sans-serif; background:#f5f5f7; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; color:#1d1d1f; }
+.container { background:white; padding:2.5rem; border-radius:24px; box-shadow:0 8px 30px rgba(0,0,0,.1); width:90%; max-width:380px; text-align:center;}
+.loader { border:4px solid #f3f3f3; border-top:4px solid #007aff; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:0 auto 20px;}
 @keyframes spin { to { transform:rotate(360deg); } }
-.status { font-size:1.1rem; font-weight:600; color:var(--primary); }
+.status { font-size:1.1rem; font-weight:600; color:#007aff; }
 #manualInput { display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px; }
 input { width:100%; padding:12px; border:1px solid #d2d2d7; border-radius:10px; margin-bottom:12px; font-size:16px;}
-button { width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer;}
-.error-text { color:var(--error); font-size:.9rem; }
+button { width:100%; padding:12px; background:#007aff; color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer;}
+.error-text { color:#ff3b30; font-size:.9rem; }
 </style>
 </head>
 <body>
 <div class="container">
   <div id="loader" class="loader"></div>
-  <div id="status" class="status">Đang định vị NFC...</div>
+  <div id="status" class="status">Đang quét NFC...</div>
   <div id="manualInput">
     <p class="error-text">Không tìm thấy mã hoặc mã không hợp lệ</p>
     <input id="inputId" placeholder="Nhập mã ID (VD: TTS-BA-G1.1)">
@@ -33,75 +28,53 @@ button { width:100%; padding:12px; background:var(--primary); color:white; borde
 </div>
 
 <script>
-const SHEET_LOG_URL = "https://script.google.com/macros/s/AKfycbwGQiiUzE0bUvxXkwy-QLZWefvQqS6T-mYSZFg7tLFxglkmNj2zCU4_JQFmIGT9sftdhw/exec";
-const CSV_FILE = "data.csv";
-const CACHE_KEY = "csv_cache";
-const CACHE_TIME = 5*60*1000;
+const SCRIPT_URL = "https://script.google.com/macros/s/YOUR_DEPLOY_ID/exec"; // Thay bằng URL Apps Script
 
 const statusEl = document.getElementById("status");
 const loaderEl = document.getElementById("loader");
 const manualInputEl = document.getElementById("manualInput");
 
-function setUI(msg,error=false){
-  statusEl.textContent=msg;
-  statusEl.style.color=error?"var(--error)":"var(--primary)";
-  loaderEl.style.display=error?"none":"block";
-  manualInputEl.style.display=error?"block":"none";
+function setUI(msg, error=false){
+  statusEl.textContent = msg;
+  statusEl.style.color = error ? "#ff3b30" : "#007aff";
+  loaderEl.style.display = error ? "none" : "block";
+  manualInputEl.style.display = error ? "block" : "none";
 }
 
-async function loadCSV(){
-  const cached = localStorage.getItem(CACHE_KEY);
-  if(cached){
-    const obj = JSON.parse(cached);
-    if(Date.now()-obj.time<CACHE_TIME) return obj.data;
-  }
-  const res = await fetch(CSV_FILE);
-  if(!res.ok) throw new Error("Không tải được CSV");
-  const text = await res.text();
-  const parsed = Papa.parse(text,{header:true,skipEmptyLines:true});
-  localStorage.setItem(CACHE_KEY,JSON.stringify({time:Date.now(),data:parsed.data}));
-  return parsed.data;
-}
-
-async function processID(id,source){
+async function processID(id){
   if(!id) return;
-  const target=id.trim().toUpperCase();
+  const target = id.trim().toUpperCase();
   setUI(`Đang xử lý ID: ${target}...`);
 
-  try{
-    const data = await loadCSV();
-    const row = data.find(r=>r.ID?.trim().toUpperCase()===target);
-    if(!row || !row.LINKS) throw new Error("ID chưa đăng ký hoặc không có link");
+  try {
+    const params = new URLSearchParams({id: target, source:"nfc"});
+    const res = await fetch(`${SCRIPT_URL}?${params}`);
+    const data = await res.json();
 
-    const params = new URLSearchParams({
-      id: row.ID,
-      toa_nha: row.TEN_TOA_NHA || "",
-      links: row.LINKS,
-      source: source
-    });
-
-    const res = await fetch(`${SHEET_LOG_URL}?${params}`);
-    const result = await res.json();
-
-    if(result.status==="OK"){
-      setUI(`✅ ID ${result.id} đã quét ${result.count} lần`);
-      setTimeout(()=>location.replace(row.LINKS),1200);
-    }else{
-      setUI(`⚠️ ${result.status}`, true);
+    if(data.status === "OK"){
+      setUI(`✅ Thành công! Lượt quét: ${data.count}`);
+      setTimeout(()=> location.replace(data.links), 500);
+    } else if(data.status === "INVALID_ID") {
+      setUI("Không tìm thấy mã hoặc mã không hợp lệ", true);
+    } else {
+      setUI("Lỗi hệ thống, thử lại sau", true);
     }
-  }catch(e){ setUI(e.message,true);}
+
+  } catch(e){
+    setUI("Lỗi mạng hoặc server", true);
+  }
 }
 
+// Lấy id từ URL nếu có
 const urlParams = new URLSearchParams(location.search);
 const idParam = urlParams.get("id");
-const sourceParam = urlParams.get("source");
+if(idParam) processID(idParam);
+else setUI("Vui lòng quét thẻ NFC", true);
 
-if(idParam) processID(idParam,sourceParam);
-else setUI("Vui lòng quét thẻ NFC",true);
-
-document.getElementById("submitId").onclick=()=>{
-  const v=document.getElementById("inputId").value;
-  if(v) processID(v,"manual");
+// Input thủ công
+document.getElementById("submitId").onclick = ()=>{
+  const v = document.getElementById("inputId").value;
+  if(v) processID(v);
 };
 </script>
 </body>
