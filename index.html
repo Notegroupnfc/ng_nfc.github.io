@@ -1,53 +1,46 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <script src="cdnjs.cloudflare.com"></script>
-  <style>
-    body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-    .container { border: 1px solid #ccc; padding: 20px; border-radius: 8px; width: 300px; }
-    input { margin: 10px 0; width: 100%; }
-    button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
-    #msg { margin-top: 10px; font-size: 13px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>📡 NFC Scan</title>
+<style>
+body { 
+  font-family: Arial, sans-serif; 
+  text-align: center; 
+  padding: 40px; 
+  background-color: #f9f9f9;
+}
+#status { 
+  font-size: 18px; 
+  margin-top: 20px; 
+  color: #333;
+}
+h2 { color: #2c3e50; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h3>Tải lên data.csv</h3>
-    <input type="file" id="csvFile" accept=".csv">
-    <button onclick="uploadFile()">Ghi vào Nhật ký</button>
-    <div id="msg"></div>
-  </div>
 
-  <script>
-    function uploadFile() {
-      const fileInput = document.getElementById('csvFile');
-      const msg = document.getElementById('msg');
-      if (fileInput.files.length === 0) {
-        msg.innerText = "Vui lòng chọn file data.csv!";
-        return;
-      }
-      msg.innerText = "Đang xử lý...";
-      const file = fileInput.files;
+<h2>📡 NFC Scan</h2>
+<p id="status">Đang xử lý...</p>
 
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          // Gửi mảng dữ liệu đã parse lên Google Apps Script
-          google.script.run
-            .withSuccessHandler((res) => {
-              msg.innerHTML = "<span style='color:green'>" + res + "</span>";
-              fileInput.value = "";
-            })
-            .withFailureHandler((err) => {
-              msg.innerHTML = "<span style='color:red'>Lỗi: " + err + "</span>";
-            })
-            .processDataFromCSV(results.data); // Gọi hàm trong Code.gs
-        }
-      });
-    }
-  </script>
+<script>
+// Lấy ID từ URL (ví dụ: index.html?id=TTS-BA-G1.1)
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+if(!id){
+  document.getElementById("status").innerText = "❌ Không có ID!";
+} else {
+  document.getElementById("status").innerText = "Đang redirect theo NFC...";
+
+  // Thay YOUR_SCRIPT_ID bằng URL Web App đã deploy
+  const webAppURL = "https://script.google.com/macros/s/AKfycbzDZStHdvBTa5oZJObwJ_l1A6Z1t71vz9l-l2Y84qfLcFW069t0LMXxhLaBrJaerX9g/exec?id=" + encodeURIComponent(id);
+
+  // Redirect ngay đến Apps Script Web App
+  window.location.href = webAppURL;
+}
+</script>
+
 </body>
 </html>
