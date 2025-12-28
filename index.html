@@ -1,81 +1,31 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<title>NFC Smart System</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body { font-family:-apple-system, system-ui, sans-serif; background:#f5f5f7; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; color:#1d1d1f; }
-.container { background:white; padding:2.5rem; border-radius:24px; box-shadow:0 8px 30px rgba(0,0,0,.1); width:90%; max-width:380px; text-align:center;}
-.loader { border:4px solid #f3f3f3; border-top:4px solid #007aff; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:0 auto 20px;}
-@keyframes spin { to { transform:rotate(360deg); } }
-.status { font-size:1.1rem; font-weight:600; color:#007aff; }
-#manualInput { display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px; }
-input { width:100%; padding:12px; border:1px solid #d2d2d7; border-radius:10px; margin-bottom:12px; font-size:16px;}
-button { width:100%; padding:12px; background:#007aff; color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer;}
-.error-text { color:#ff3b30; font-size:.9rem; }
-</style>
-</head>
-<body>
-<div class="container">
-  <div id="loader" class="loader"></div>
-  <div id="status" class="status">Đang quét NFC...</div>
-  <div id="manualInput">
-    <p class="error-text">Không tìm thấy mã hoặc mã không hợp lệ</p>
-    <input id="inputId" placeholder="Nhập mã ID (VD: TTS-BA-G1.1)">
-    <button id="submitId">Xác nhận</button>
-  </div>
-</div>
+function doGet(e){
+  try{
+    let p={};
+    if(e && e.parameter){ p=e.parameter; }
 
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycyV5pRI4QJ5ir4d4uWnJ8Z3_s27s7DZDtv6r_en2XYzUEoajgH_zvx5Q-JV6VCoEmCQ/exec"; // Thay bằng URL Apps Script
-
-const statusEl = document.getElementById("status");
-const loaderEl = document.getElementById("loader");
-const manualInputEl = document.getElementById("manualInput");
-
-function setUI(msg, error=false){
-  statusEl.textContent = msg;
-  statusEl.style.color = error ? "#ff3b30" : "#007aff";
-  loaderEl.style.display = error ? "none" : "block";
-  manualInputEl.style.display = error ? "block" : "none";
-}
-
-async function processID(id){
-  if(!id) return;
-  const target = id.trim().toUpperCase();
-  setUI(`Đang xử lý ID: ${target}...`);
-
-  try {
-    const params = new URLSearchParams({id: target, source:"nfc"});
-    const res = await fetch(`${SCRIPT_URL}?${params}`);
-    const data = await res.json();
-
-    if(data.status === "OK"){
-      setUI(`✅ Thành công! Lượt quét: ${data.count}`);
-      setTimeout(()=> location.replace(data.links), 500);
-    } else if(data.status === "INVALID_ID") {
-      setUI("Không tìm thấy mã hoặc mã không hợp lệ", true);
-    } else {
-      setUI("Lỗi hệ thống, thử lại sau", true);
+    if(p.source!=="nfc"){
+      return ContentService.createTextOutput("IGNORE").setMimeType(ContentService.MimeType.TEXT);
     }
 
-  } catch(e){
-    setUI("Lỗi mạng hoặc server", true);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("LOG_NFC");
+    if(!sheet){
+      sheet = ss.insertSheet("LOG_NFC");
+      sheet.appendRow(["ID","THOI_GIAN","TEN_TOA_NHA","LINKS"]);
+    }
+
+    const thoiGianVn = Utilities.formatDate(new Date(),"GMT+7","dd/MM/yyyy HH:mm:ss");
+
+    sheet.appendRow([
+      p.id || "N/A",
+      thoiGianVn,
+      p.toa_nha || "N/A",
+      p.links || "N/A"
+    ]);
+
+    return ContentService.createTextOutput("LOG_NFC_OK").setMimeType(ContentService.MimeType.TEXT);
+  }catch(err){
+    Logger.log(err);
+    return ContentService.createTextOutput("ERROR: "+err.toString());
   }
 }
-
-// Lấy id từ URL nếu có
-const urlParams = new URLSearchParams(location.search);
-const idParam = urlParams.get("id");
-if(idParam) processID(idParam);
-else setUI("Vui lòng quét thẻ NFC", true);
-
-// Input thủ công
-document.getElementById("submitId").onclick = ()=>{
-  const v = document.getElementById("inputId").value;
-  if(v) processID(v);
-};
-</script>
-</body>
-</html>
