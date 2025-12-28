@@ -1,46 +1,70 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>📡 NFC Scan</title>
-<style>
-body { 
-  font-family: Arial, sans-serif; 
-  text-align: center; 
-  padding: 40px; 
-  background-color: #f9f9f9;
-}
-#status { 
-  font-size: 18px; 
-  margin-top: 20px; 
-  color: #333;
-}
-h2 { color: #2c3e50; }
-</style>
-</head>
-<body>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Redirect</title>
 
-<h2>📡 NFC Scan</h2>
-<p id="status">Đang xử lý...</p>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding-top: 60px;
+        background: #f9f9f9;
+        color: #333;
+      }
+      .loader {
+        margin: 20px auto;
+        width: 40px;
+        height: 40px;
+        border: 4px solid #ddd;
+        border-top: 4px solid #4285f4;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .error {
+        color: red;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
 
-<script>
-// Lấy ID từ URL (ví dụ: index.html?id=TTS-BA-G1.1)
-const params = new URLSearchParams(window.location.search);
-const id = params.get("id");
+  <body>
+    <h3>Đang xử lý NFC...</h3>
+    <div class="loader"></div>
+    <div id="msg"></div>
 
-if(!id){
-  document.getElementById("status").innerText = "❌ Không có ID!";
-} else {
-  document.getElementById("status").innerText = "Đang redirect theo NFC...";
+    <script>
+      // Lấy ID từ URL
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
 
-  // Thay YOUR_SCRIPT_ID bằng URL Web App đã deploy
-  const webAppURL = "https://script.google.com/macros/s/AKfycbzDZStHdvBTa5oZJObwJ_l1A6Z1t71vz9l-l2Y84qfLcFW069t0LMXxhLaBrJaerX9g/exec?id=" + encodeURIComponent(id);
-
-  // Redirect ngay đến Apps Script Web App
-  window.location.href = webAppURL;
-}
-</script>
-
-</body>
+      if (!id) {
+        document.getElementById("msg").innerHTML =
+          "<div class='error'>Thiếu ID NFC</div>";
+      } else {
+        // Gọi Apps Script xử lý log
+        google.script.run
+          .withSuccessHandler(function (redirectUrl) {
+            if (redirectUrl) {
+              window.location.href = redirectUrl;
+            } else {
+              document.getElementById("msg").innerHTML =
+                "<div class='error'>Không tìm thấy link chuyển hướng</div>";
+            }
+          })
+          .withFailureHandler(function (err) {
+            document.getElementById("msg").innerHTML =
+              "<div class='error'>Lỗi xử lý NFC</div>";
+            console.error(err);
+          })
+          .processNFC(id);
+      }
+    </script>
+  </body>
 </html>
