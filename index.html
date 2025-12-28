@@ -14,19 +14,19 @@
     if (!id) {
       document.body.innerHTML = "Thiếu ID NFC";
     } else {
-      // Gọi Web App Google Script để ghi log
-      const webAppUrl = "https://script.google.com/macros/s/AKfycbyQVInfcvjJHALaA-Pl0WElyt9OaD4Gzexhb2IYSSRjpFYl4gfwSZIOSCcj_ket4pkq/exec?id=" 
-                          + encodeURIComponent(id) 
+      // Gọi Web App để ghi log
+      const webAppUrl = "https://script.google.com/macros/s/AKfycbwc4LypYX5Fka-6F2xiK07wS7K4Bk-GaMGmBKltM8QyuXYWwaj1rPn_0Vpt1cZ__dPq/exec?id=" 
+                          + encodeURIComponent(id)
                           + "&source=" + encodeURIComponent(source);
 
       fetch(webAppUrl)
-        .then(response => response.text())
+        .then(res => res.text())
         .then(link => {
-          // Mở link trực tiếp, chỉ một lần
+          // Mở link trực tiếp 1 lần, tránh reload
           window.location.href = link.trim();
         })
         .catch(err => {
-          document.body.innerHTML = "Lỗi khi ghi log: " + err;
+          document.body.innerHTML = "Lỗi ghi log: " + err;
         });
     }
   </script>
